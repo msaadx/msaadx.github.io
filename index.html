@@ -146,6 +146,64 @@
       </div>
     </section>
 
+    <!-- ============================ SHOWCASE (scroll-driven 3D) ============================ -->
+    <section class="showcase" id="showcase">
+      <div class="showcase__sticky">
+        <canvas class="showcase__canvas" id="showcaseCanvas" aria-hidden="true"></canvas>
+        <div class="showcase__grid" aria-hidden="true"></div>
+        <div class="showcase__scrim" aria-hidden="true"></div>
+
+        <div class="showcase__overlay">
+          <div class="container showcase__inner">
+            <p class="eyebrow eyebrow--light showcase__eyebrow">
+              <span class="eyebrow__line"></span>
+              From neurons to orbit
+            </p>
+
+            <div class="showcase__captions" id="showcaseCaptions">
+              <article class="sc-cap is-active" data-scene="0">
+                <span class="sc-cap__index">01 — Neural Networks</span>
+                <h2 class="sc-cap__title">Architectures that <span class="ital">learn</span></h2>
+                <p class="sc-cap__text">
+                  Layer upon layer of artificial neurons, wired side by side — the deep networks
+                  I design, train and refine until they learn the structure of the world.
+                </p>
+              </article>
+
+              <article class="sc-cap" data-scene="1">
+                <span class="sc-cap__index">02 — The Brain</span>
+                <h2 class="sc-cap__title">Inspired by the <span class="ital">brain</span></h2>
+                <p class="sc-cap__text">
+                  Every model traces back to nature's blueprint — billions of neurons firing in
+                  concert. Decoding that architecture is what taught machines to think.
+                </p>
+              </article>
+
+              <article class="sc-cap" data-scene="2">
+                <span class="sc-cap__index">03 — The Frontier</span>
+                <h2 class="sc-cap__title">Engineering at the <span class="ital">frontier</span></h2>
+                <p class="sc-cap__text">
+                  From first principles to systems in orbit — I chase the edge where rigorous
+                  science meets the technology that pushes humanity forward.
+                </p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="showcase__dots" id="showcaseDots" aria-hidden="true">
+          <button type="button" data-scene="0" data-label="Neural net" class="is-on" aria-label="Neural network"></button>
+          <button type="button" data-scene="1" data-label="Brain" aria-label="Brain"></button>
+          <button type="button" data-scene="2" data-label="ISS" aria-label="ISS"></button>
+        </div>
+
+        <div class="showcase__hint" aria-hidden="true">
+          <span>Scroll to explore</span>
+          <span class="line"></span>
+        </div>
+      </div>
+    </section>
+
     <!-- ============================ ABOUT ============================ -->
     <section class="section about" id="about">
       <div class="container about__grid">
@@ -1026,5 +1084,10 @@
   </button>
 
   <script src="js/main.js"></script>
+
+  <!-- Three.js for the interactive 3D neural network in the hero -->
+  <!-- vendored locally (classic scripts) so it works on file://, offline, and when deployed -->
+  <script src="js/vendor/three.min.js"></script>
+  <script src="js/scroll-3d.js"></script>
 </body>
 </html>
