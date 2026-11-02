@@ -20,7 +20,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="css/styles.css" />
+  <!-- engineering mode (the galaxy toggle): its fonts load only once they are used -->
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/styles.css" id="classicCss" />
+  <link rel="stylesheet" href="css/field.css" id="fieldCss" media="not all" />
+  <script>
+    /* pick the mode before first paint: ?mode=field, or the choice made earlier in this tab */
+    (function () {
+      try {
+        if (/[?&]mode=field\b/.test(location.search) || sessionStorage.getItem('msh-mode') === 'field') {
+          document.documentElement.classList.add('mode-field');
+          document.getElementById('classicCss').media = 'not all';
+          document.getElementById('fieldCss').media = 'all';
+        }
+      } catch (e) {}
+    })();
+  </script>
   <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
 </head>
 <body>
@@ -42,6 +58,21 @@
       <a href="#contact" class="nav__link nav__link--cta">Contact</a>
     </nav>
 
+    <button class="mode-toggle" id="modeToggle" type="button" aria-pressed="false" aria-label="Switch to engineering mode">
+      <svg viewBox="-20 -20 40 40" aria-hidden="true">
+        <g transform="scale(1 .62) rotate(-18)">
+          <g>
+            <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="9s" repeatCount="indefinite" />
+            <path d="M0 0C0-6 7-9 11-5C15-1 14 6 9 10C6 12 2 13-1 13" />
+            <path d="M0 0C0 6-7 9-11 5C-15 1-14-6-9-10C-6-12-2-13 1-13" />
+            <g class="mode-toggle__stars"><circle cx="14" cy="-11" r=".9" /><circle cx="-15" cy="9" r=".9" /><circle cx="-4" cy="-16" r=".7" /><circle cx="5" cy="16" r=".7" /></g>
+            <circle class="mode-toggle__core" r="2.8" />
+          </g>
+        </g>
+      </svg>
+      <span class="mode-toggle__tip" aria-hidden="true">Engineering mode</span>
+    </button>
+
     <button class="burger" id="navToggle" aria-expanded="false" aria-controls="primaryNav" aria-label="Open menu">
       <span></span><span></span>
     </button>
@@ -51,7 +82,7 @@
 <main id="top">
 
   <!-- ══════════════════════ HERO ══════════════════════ -->
-  <section class="hero" id="hero">
+  <section class="hero" id="hero" data-scene="galaxy">
     <div class="shell hero__inner">
       <div class="hero__text">
         <p class="label">Machine Learning Engineer &nbsp;·&nbsp; Islamabad, Pakistan</p>
@@ -91,7 +122,7 @@
   </section>
 
   <!-- ══════════════════════ ABOUT ══════════════════════ -->
-  <section class="section about" id="about">
+  <section class="section about" id="about" data-scene="brain">
     <div class="shell split">
       <header class="split__head reveal">
         <p class="label">I. &nbsp;About</p>
@@ -116,7 +147,7 @@
   </section>
 
   <!-- ══════════════════════ EXPERTISE ══════════════════════ -->
-  <section class="section section--tint expertise">
+  <section class="section section--tint expertise" id="expertise" data-scene="net">
     <div class="shell">
       <header class="section__head reveal">
         <p class="label">II. &nbsp;What I do</p>
@@ -153,7 +184,7 @@
   </section>
 
   <!-- ══════════════════════ EXPERIENCE ══════════════════════ -->
-  <section class="section experience" id="experience">
+  <section class="section experience" id="experience" data-scene="chip">
     <div class="shell">
       <header class="section__head reveal">
         <p class="label">III. &nbsp;Experience</p>
@@ -240,7 +271,7 @@
   </section>
 
   <!-- ══════════════════════ FEATURED WORK ══════════════════════ -->
-  <section class="section section--tint work" id="work">
+  <section class="section section--tint work" id="work" data-scene="rover">
     <div class="shell">
       <header class="section__head reveal">
         <p class="label">IV. &nbsp;Featured Work</p>
@@ -310,7 +341,7 @@
   </section>
 
   <!-- ══════════════════════ RESEARCH ══════════════════════ -->
-  <section class="section research" id="research">
+  <section class="section research" id="research" data-scene="orbits">
     <div class="shell">
       <header class="section__head reveal">
         <p class="label">V. &nbsp;Research &amp; Development</p>
@@ -383,7 +414,7 @@
   </section>
 
   <!-- ══════════════════════ PROJECTS ══════════════════════ -->
-  <section class="section section--tint projects" id="projects">
+  <section class="section section--tint projects" id="projects" data-scene="helix">
     <div class="shell">
       <header class="section__head reveal">
         <p class="label">VI. &nbsp;Projects</p>
@@ -653,7 +684,7 @@
   </section>
 
   <!-- ══════════════════════ SKILLS ══════════════════════ -->
-  <section class="section skills" id="skills">
+  <section class="section skills" id="skills" data-scene="atom">
     <div class="shell split">
       <header class="split__head reveal">
         <p class="label">VII. &nbsp;Toolkit</p>
@@ -672,7 +703,7 @@
   </section>
 
   <!-- ══════════════════════ BEYOND THE CODE ══════════════════════ -->
-  <section class="section section--tint beyond" id="beyond">
+  <section class="section section--tint beyond" id="beyond" data-scene="wave">
     <div class="shell">
       <header class="section__head section__head--center reveal">
         <p class="label">VIII. &nbsp;Beyond the Code</p>
@@ -703,7 +734,7 @@
   </section>
 
   <!-- ══════════════════════ CONTACT ══════════════════════ -->
-  <section class="section contact" id="contact">
+  <section class="section contact" id="contact" data-scene="rocket">
     <div class="shell contact__inner">
       <div class="contact__intro reveal">
         <p class="label">IX. &nbsp;Correspondence</p>
@@ -753,5 +784,7 @@
 </footer>
 
 <script src="js/main.js"></script>
+<script src="js/field.js"></script>
+<script src="js/mode.js"></script>
 </body>
 </html>

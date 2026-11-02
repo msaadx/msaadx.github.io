@@ -151,6 +151,21 @@ strong{font-weight:500;color:var(--ink)}
 .burger.is-open span:nth-child(1){transform:translateY(3.5px) rotate(45deg)}
 .burger.is-open span:nth-child(2){transform:translateY(-3.5px) rotate(-45deg)}
 
+/* the galaxy beside Contact: switches the whole site into engineering mode (js/mode.js) */
+.nav{margin-left:auto}
+.mode-toggle{position:relative;flex:none;width:42px;height:42px;display:grid;place-items:center;color:var(--navy);
+  border:1px solid var(--rule-2);border-radius:50%;transition:border-color .3s,transform .5s var(--ease)}
+.mode-toggle:hover{border-color:var(--navy);transform:scale(1.08)}
+.mode-toggle svg{width:32px;height:32px;overflow:visible}
+.mode-toggle path{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-dasharray:.1 2.2}
+.mode-toggle__stars circle{fill:currentColor;opacity:.55}
+.mode-toggle__core{fill:var(--brass)}
+.mode-toggle__tip{position:absolute;top:calc(100% + 10px);right:0;white-space:nowrap;font-size:.64rem;font-weight:500;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--paper);background:var(--navy);padding:6px 10px;opacity:0;transform:translateY(-4px);
+  pointer-events:none;transition:opacity .3s,transform .3s var(--ease)}
+.mode-toggle:hover .mode-toggle__tip,.mode-toggle:focus-visible .mode-toggle__tip{opacity:1;transform:none}
+.field-only{display:none!important}
+
 /* ══════════════════ 04 · HERO ══════════════════ */
 .hero{padding-top:clamp(130px,17vh,180px);padding-bottom:clamp(56px,7vw,88px)}
 .hero__inner{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:clamp(40px,6vw,96px);align-items:center}
@@ -352,6 +367,7 @@ strong{font-weight:500;color:var(--ink)}
 }
 @media (max-width:820px){
   .burger{display:block;z-index:120}
+  .mode-toggle{margin-left:auto}
   .nav{position:fixed;inset:0;z-index:110;flex-direction:column;justify-content:center;gap:26px;background:var(--paper);
     opacity:0;visibility:hidden;transition:opacity .4s var(--ease),visibility .4s}
   .nav.is-open{opacity:1;visibility:visible}
@@ -379,7 +395,7 @@ strong{font-weight:500;color:var(--ink)}
 
 /* ══════════════════ PRINT (Download CV) ══════════════════ */
 @media print{
-  body::after,.header,.hero__actions,.hero__portrait,.filters,.pager,.contact__form,.footer{display:none!important}
+  body::after,.header,.mode-toggle,.hero__actions,.hero__portrait,.filters,.pager,.contact__form,.footer{display:none!important}
   body{background:#fff;font-size:11pt}
   .section,.section--tint,.contact{background:#fff;color:#111;padding-block:18px;border:0}
   .contact__title,.contact .label,.contact__lead,.contact__methods dt{color:#111}
