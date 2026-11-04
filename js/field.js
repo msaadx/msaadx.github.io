@@ -41,7 +41,10 @@
     'rgba(255,106,61,.95)',  // 2 signal orange
     'rgba(127,216,255,.9)',  // 3 cyan
     'rgba(127,216,255,.32)', // 4 cyan, dim
-    'rgba(255,255,255,1)'    // 5 hot white
+    'rgba(255,255,255,1)',   // 5 hot white
+    'rgba(255,214,160,.9)',  // 6 old-star gold (bulge, bar)
+    'rgba(175,205,255,.88)', // 7 young-star blue-white
+    'rgba(255,128,172,.9)'   // 8 H-II pink (star-forming knots)
   ];
   var INK = 'rgba(236,230,216,', ORANGE = 'rgba(255,106,61,', CYAN = 'rgba(127,216,255,';
 
@@ -117,57 +120,161 @@
   };
   var state = { core: 0, fire: -1, fireT: -99, orbit: -1, electron: -1, cat: 'all', pluck: [0, 0, 0, 0], sectionP: 0 };
 
-  /* ── 01 · GALAXY ─────────────────────────────────────────────── */
+  /* ── 01 · THE MILKY WAY ──────────────────────────────────────────
+     Our own galaxy, face-on and gently tilted: a central bar around
+     Sgr A*, two major arms (Scutum–Centaurus, Perseus) leaving the bar
+     ends, two minor arms (Norma, Sagittarius), and the Orion Spur with
+     the Sun 8.2 kpc out. Unit radius ≈ 15 kpc. Arms are logarithmic
+     spirals at a 12.5° pitch; their inner edges are kept thin to read
+     as dust lanes, and pink knots stand in for star-forming regions.  */
+  function gauss() { return Math.sqrt(-2 * Math.log(rand() + 1e-9)) * Math.cos(TAU * rand()); }
+  var MW = { bar: .47, pitch: Math.tan(12.5 * Math.PI / 180), incl: .74, pa: -.32, r0: .26 };
+  var MW_ARMS = [
+    { name: 'SCUTUM–CENTAURUS ARM', phi: MW.bar, r1: 1.0, w: 1 },
+    { name: 'PERSEUS ARM', phi: MW.bar + Math.PI, r1: 1.0, w: 1 },
+    { name: 'NORMA ARM', phi: MW.bar + Math.PI / 2, r1: .86, w: .4 },
+    { name: 'SAGITTARIUS ARM', phi: MW.bar + 3 * Math.PI / 2, r1: .86, w: .4 }
+  ];
+  function armAngle(arm, r) { return arm.phi + Math.log(r / MW.r0) / MW.pitch; }
+  // the Sun sits between Sagittarius (inside, ~6.9 kpc) and Perseus (outside, ~9.8 kpc)
+  var SUN = { r: .55, a: MW_ARMS[3].phi + Math.log(.46 / MW.r0) / MW.pitch };
+  var SPUR = { name: 'ORION SPUR', phi: SUN.a - Math.log(.565 / MW.r0) / MW.pitch, r0: .47, r1: .66, w: .22 };
+  function mwSpin(t) { return -t * .03; } // trailing arms: the disk turns against the winding
+  function mwProject(x, y, t, o) {
+    var sp = mwSpin(t), c = Math.cos(sp), s = Math.sin(sp);
+    var X = x * c - y * s, Y = (x * s + y * c) * MW.incl, cp = Math.cos(MW.pa), spa = Math.sin(MW.pa);
+    o.x = X * cp - Y * spa; o.y = X * spa + Y * cp;
+  }
+  function mwArmPoint(arm, r, t, o) { var a = armAngle(arm, r); mwProject(Math.cos(a) * r, Math.sin(a) * r, t, o); }
+
   var galaxy = {
-    id: 'galaxy', name: 'SPIRAL GALAXY · N-BODY', scale: 1.08,
+    id: 'galaxy', name: 'MILKY WAY · BARRED SPIRAL', scale: 1.24, additive: true,
     parts: [
-      { w: .62, c: 0, init: function (n) {
-          this.r = new Float32Array(n); this.a = new Float32Array(n); this.col = new Uint8Array(n);
+      // spiral arms, spur and star-forming knots
+      { w: .5, c: 7, init: function (n) {
+          this.p = new Float32Array(n * 2); this.col = new Uint8Array(n); this.sz = new Float32Array(n);
+          var arms = MW_ARMS.concat([SPUR]), tot = arms.reduce(function (s, a) { return s + a.w; }, 0), knots = [];
+          function pickArm() { var x = rand() * tot; for (var i = 0; i < arms.length; i++) { x -= arms[i].w; if (x <= 0) return arms[i]; } return arms[0]; }
+          function armR(arm) { var lo = arm.r0 || MW.r0, r; do { r = lo + (-Math.log(rand() + 1e-9)) * .4; } while (r > arm.r1); return r; }
+          for (var q = 0; q < 70; q++) { var ka = pickArm(), kr = armR(ka), kt = armAngle(ka, kr); knots.push([Math.cos(kt) * kr, Math.sin(kt) * kr]); }
           for (var k = 0; k < n; k++) {
-            var r = Math.pow(rand(), .62) * .98;
-            this.r[k] = r;
-            this.a[k] = (k % 3) * TAU / 3 + r * 4.4 + (rand() - .5) * (.55 - r * .25);
-            this.col[k] = rand() < .12 ? 3 : rand() < .25 ? 1 : 0;
+            var x, y;
+            if (rand() < .13) {
+              var kn = knots[(rand() * knots.length) | 0];
+              x = kn[0] + gauss() * .011; y = kn[1] + gauss() * .011;
+              this.col[k] = rand() < .6 ? 8 : 5; this.sz[k] = 1.25;
+            } else {
+              var arm = pickArm(), r = armR(arm), sig = .012 + .034 * r, g = gauss();
+              if (g < 0) g *= .4;                       // a sharp inner edge reads as a dust lane
+              var rr = r + g * sig, th = armAngle(arm, r) + gauss() * .035;
+              x = Math.cos(th) * rr; y = Math.sin(th) * rr;
+              var c = rand();
+              this.col[k] = c < .48 ? 7 : c < .76 ? 0 : 1; this.sz[k] = 1;
+            }
+            this.p[k * 2] = x; this.p[k * 2 + 1] = y;
           }
         },
         at: function (k, t, o) {
-          var r = this.r[k], a = this.a[k] + t * .07 * (1.35 - r);
-          var x = Math.cos(a) * r, y = Math.sin(a) * r * .58;
-          o.x = x * .94 - y * .34; o.y = x * .34 + y * .94; o.c = this.col[k];
+          mwProject(this.p[k * 2], this.p[k * 2 + 1], t, o);
+          o.c = this.col[k]; o.s = this.sz[k];
         } },
-      { w: .2, c: 2, s: 1.3, init: function (n) {
-          this.r = new Float32Array(n); this.a = new Float32Array(n);
-          for (var k = 0; k < n; k++) { this.r[k] = Math.pow(rand(), 1.8) * .2; this.a[k] = rand() * TAU; }
+      // the old stellar disk between the arms
+      { w: .17, c: 1, init: function (n) {
+          this.p = new Float32Array(n * 2); this.col = new Uint8Array(n);
+          for (var k = 0; k < n; k++) {
+            var r; do { r = -Math.log(rand() + 1e-9) * .3; } while (r > 1.05);
+            var a = rand() * TAU;
+            this.p[k * 2] = Math.cos(a) * r; this.p[k * 2 + 1] = Math.sin(a) * r;
+            this.col[k] = r < .32 && rand() < .5 ? 6 : rand() < .15 ? 4 : 1;
+          }
         },
-        at: function (k, t, o) {
-          var r = this.r[k], a = this.a[k] + t * .22;
-          o.x = Math.cos(a) * r; o.y = Math.sin(a) * r * .6;
-          o.c = r < .06 ? 5 : r < .12 ? 2 : 0;
-        } },
-      { w: .18, c: 1, init: function (n) {
+        at: function (k, t, o) { mwProject(this.p[k * 2], this.p[k * 2 + 1], t, o); o.c = this.col[k]; } },
+      // the bar and the bulge around Sgr A*
+      { w: .21, c: 6, init: function (n) {
+          this.p = new Float32Array(n * 2); this.col = new Uint8Array(n);
+          var cb = Math.cos(MW.bar), sb = Math.sin(MW.bar);
+          for (var k = 0; k < n; k++) {
+            var x, y;
+            if (rand() < .55) {
+              var u; do { u = gauss() * .15; } while (Math.abs(u) > .33);
+              var v = gauss() * .045 * (1 - Math.abs(u) / .42);
+              x = u * cb - v * sb; y = u * sb + v * cb;
+            } else {
+              var r = Math.min(.2, -Math.log(rand() + 1e-9) * .045), a = rand() * TAU;
+              x = Math.cos(a) * r; y = Math.sin(a) * r * .85;
+            }
+            this.p[k * 2] = x; this.p[k * 2 + 1] = y;
+            var d = Math.hypot(x, y);
+            this.col[k] = d < .03 ? 5 : rand() < .72 ? 6 : 0;
+          }
+        },
+        at: function (k, t, o) { mwProject(this.p[k * 2], this.p[k * 2 + 1], t, o); o.c = this.col[k]; } },
+      // foreground and halo stars, twinkling
+      { w: .12, c: 1, init: function (n) {
           this.p = new Float32Array(n * 2);
-          for (var k = 0; k < n; k++) { this.p[k * 2] = (rand() - .5) * 2.6; this.p[k * 2 + 1] = (rand() - .5) * 2.2; }
+          for (var k = 0; k < n; k++) { this.p[k * 2] = (rand() - .5) * 2.8; this.p[k * 2 + 1] = (rand() - .5) * 2.3; }
         },
         at: function (k, t, o) {
           o.x = this.p[k * 2]; o.y = this.p[k * 2 + 1];
           o.c = hash(k + Math.floor(t * 2 + k)) < .08 ? 0 : 1;
         } }
     ],
+    underlay: function (T, a, t) {
+      var R = T.s, g;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.translate(T.x(0), T.y(0)); ctx.rotate(MW.pa); ctx.scale(1, MW.incl); ctx.rotate(mwSpin(t));
+      // disk haze
+      g = ctx.createRadialGradient(0, 0, 0, 0, 0, R * 1.08);
+      g.addColorStop(0, 'rgba(140,160,220,' + (.16 * a) + ')');
+      g.addColorStop(.45, 'rgba(80,105,180,' + (.08 * a) + ')');
+      g.addColorStop(1, 'rgba(40,60,120,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * 1.08, 0, TAU); ctx.fill();
+      // arm glow: two soft passes along each spiral
+      ctx.lineCap = 'round';
+      [[.11, .04], [.055, .06]].forEach(function (pass) {
+        ctx.lineWidth = R * pass[0];
+        MW_ARMS.concat([SPUR]).forEach(function (arm) {
+          ctx.strokeStyle = 'rgba(130,165,255,' + (pass[1] * a * (arm.w < 1 ? .7 : 1)) + ')';
+          ctx.beginPath();
+          for (var r = arm.r0 || MW.r0, first = true; r <= arm.r1; r += .02) {
+            var th = armAngle(arm, r), x = Math.cos(th) * r * R, y = Math.sin(th) * r * R;
+            if (first) { ctx.moveTo(x, y); first = false; } else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        });
+      });
+      // bar glow
+      ctx.save(); ctx.rotate(MW.bar); ctx.scale(1, .36);
+      g = ctx.createRadialGradient(0, 0, 0, 0, 0, R * .38);
+      g.addColorStop(0, 'rgba(255,225,180,' + (.5 * a) + ')');
+      g.addColorStop(.45, 'rgba(255,185,115,' + (.2 * a) + ')');
+      g.addColorStop(1, 'rgba(255,160,90,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * .38, 0, TAU); ctx.fill();
+      ctx.restore();
+      // the core
+      g = ctx.createRadialGradient(0, 0, 0, 0, 0, R * .13);
+      g.addColorStop(0, 'rgba(255,248,230,' + (.85 * a) + ')');
+      g.addColorStop(1, 'rgba(255,215,160,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, R * .13, 0, TAU); ctx.fill();
+      ctx.restore();
+    },
     overlay: function (T, a, t) {
-      var cx = T.x(0), cy = T.y(0), R = T.s * 1.12;
-      ctx.strokeStyle = INK + (.12 * a) + ')'; ctx.lineWidth = DPR;
-      ctx.beginPath(); ctx.ellipse(cx, cy, R, R * .62, .35, 0, TAU); ctx.stroke();
-      for (var i = 0; i < 36; i++) {
-        var ang = i / 36 * TAU, c = Math.cos(ang), s = Math.sin(ang), L = i % 9 ? 4 : 10;
-        ctx.beginPath();
-        ctx.moveTo(cx + c * R, cy + s * R * .62);
-        ctx.lineTo(cx + c * (R + L * DPR), cy + s * (R + L * DPR) * .62);
-        ctx.stroke();
-      }
-      callout(T, 0, 0, 120, -150, 'CORE · Sgr A*', a, ORANGE);
-      callout(T, -.62, .22, -70, 90, 'PERSEUS ARM', a);
-      label(T.x(.3), T.y(1.0), 'N = ' + N.toLocaleString() + ' BODIES', .7 * a);
-      label(T.x(.3), T.y(1.0) + 16 * DPR, 'Ω = 0.07 rad/s · t = ' + t.toFixed(1) + 's', .45 * a);
+      var p = {};
+      callout(T, 0, 0, 130, -150, 'Sgr A* · 4.3 M☉ × 10⁶', a, ORANGE);
+      mwArmPoint(MW_ARMS[1], .86, t, p); callout(T, p.x, p.y, -60, 70, MW_ARMS[1].name, a);
+      mwArmPoint(MW_ARMS[0], .8, t, p); callout(T, p.x, p.y, 70, -60, MW_ARMS[0].name, a);
+      // the Sun: a ring, and its distance from the centre as a dimension line
+      mwProject(Math.cos(SUN.a) * SUN.r, Math.sin(SUN.a) * SUN.r, t, p);
+      var sx = T.x(p.x), sy = T.y(p.y), cx = T.x(0), cy = T.y(0);
+      ctx.strokeStyle = ORANGE + (.9 * a) + ')'; ctx.lineWidth = 1.4 * DPR;
+      ctx.beginPath(); ctx.arc(sx, sy, 5 * DPR, 0, TAU); ctx.stroke();
+      ctx.setLineDash([3 * DPR, 4 * DPR]); ctx.strokeStyle = ORANGE + (.4 * a) + ')'; ctx.lineWidth = DPR;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(sx, sy); ctx.stroke(); ctx.setLineDash([]);
+      label((cx + sx) / 2 + 8 * DPR, (cy + sy) / 2 - 6 * DPR, '8.2 kpc', .75 * a, ORANGE, 10);
+      callout(T, p.x, p.y, -80, 60, 'SUN · YOU ARE HERE', a, ORANGE);
+      label(T.x(-.55), T.y(.98), 'MILKY WAY · SBbc BARRED SPIRAL', .75 * a);
+      label(T.x(-.55), T.y(.98) + 16 * DPR, 'Ø ≈ 30 kpc · 100–400 BILLION STARS · ' + N.toLocaleString() + ' SHOWN', .45 * a);
     }
   };
 
@@ -937,6 +1044,17 @@
     }
     waves = waves.filter(function (wv) { return now - wv.t0 < 1.4; });
 
+    // underlays (glows) sit beneath the particles; additive scenes let dense stars bloom
+    function underlayFor(sc, alpha) {
+      if (alpha <= .01 || !sc.underlay) return;
+      var sS = F.S * (sc.scale || 1), lift = sc.move ? sc.move(t) : 0;
+      sc.underlay({ s: sS * DPR,
+        x: function (ux) { return (F.cx + (ux + (sc.ox || 0)) * sS) * DPR; },
+        y: function (uy) { return (F.cy + (uy + (sc.oy || 0) + lift) * sS) * DPR; } }, alpha, t);
+    }
+    underlayFor(sa, 1 - smooth(0, .5, u));
+    if (sb !== sa) underlayFor(sb, smooth(.5, 1, u));
+    ctx.globalCompositeOperation = (u < .5 ? sa : sb).additive ? 'lighter' : 'source-over';
     for (b = 0; b < buckets.length; b++) {
       var list = buckets[b]; if (!list.length) continue;
       ctx.fillStyle = PAL[b];
@@ -945,6 +1063,7 @@
         ctx.fillRect(px[q] - z / 2, py[q] - z / 2, z, z);
       }
     }
+    ctx.globalCompositeOperation = 'source-over';
 
     // overlays: callouts belong to a settled scene, so they fade out early in a throw
     var T = { s: F.S * DPR, x: null, y: null };

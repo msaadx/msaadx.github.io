@@ -1,5 +1,5 @@
 /* =====================================================================
-   MUHAMMAD SAAD HASAN — portfolio
+   MUHAMMAD SAAD — portfolio
    Light interaction layer · vanilla JS · no dependencies
    ===================================================================== */
 (function () {
